@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Hub</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="header">
+    <div class="header-content">
+        <div class="logo-container">
+            <h1>Space Hub</h1>
+            <img src="favicon.ico" alt="Space Hub Logo">
+        </div>
+        <div class="header-links">
+            <span class="header-link active" id="homeIcon">Home</span>
+            <span class="header-link" id="trendingIcon">Trending</span>
+            <span class="header-link" id="newMoviesIcon">New Movies</span>
+            <button class="header-button" id="signUpBtn">Sign Up</button>
+        </div>
+    </div>
+    <div class="search-container">
+        <input type="text" id="searchInput" placeholder="Search for movies...">
+        <button id="searchBtn">🔍</button>
+    </div>
+</header>
+
+<div class="container" id="moviesContainer">
+    <!-- Movies will be displayed here -->
+</div>
+
+<div id="signupModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Sign Up</h2>
+        <form>
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username">
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password">
+            <button type="submit">Submit</button>
+        </form>
+    </div>
+</div>
+
+<div id="movieDetailsModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2 id="movieTitle"></h2>
+        <img id="moviePoster" src="" alt="Movie Poster">
+        <p id="movieRating"></p>
+        <p id="moviePlot"></p>
+        <p id="movieOtherInfo"></p>
+    </div>
+</div>
+<footer>
+    <p>Data provided by <a href="http://www.omdbapi.com/">OMDb API</a>.</p>
+    <p>&copy; 2024 Created by Samir, Brishika, Pherish, and Puja</p>
+
+<script>
+    const apiKey = '979fa812';
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        const homeIcon = document.getElementById('homeIcon');
+        const trendingIcon = document.getElementById('trendingIcon');
+        const newMoviesIcon = document.getElementById('newMoviesIcon');
+        const searchBtn = document.getElementById('searchBtn');
+        const searchInput = document.getElementById('searchInput');
+        const signUpBtn = document.getElementById('signUpBtn');
+        const modal = document.getElementById('signupModal');
+        const closeBtn = document.querySelector('.close');
+        const movieDetailsModal = document.getElementById('movieDetailsModal');
+        const movieTitle = document.getElementById('movieTitle');
+        const movieRating = document.getElementById('movieRating');
+        const moviePlot = document.getElementById('moviePlot');
+        const movieOtherInfo = document.getElementById('movieOtherInfo');
+        const moviePoster = document.getElementById('moviePoster');
+
+        homeIcon.addEventListener('click', async () => {
+            const defaultMovies = await getDefaultMovies();
+            displayMovies(defaultMovies);
+        });
+
+        trendingIcon.addEventListener('click', async () => {
+            const trendingMovies = await getTrendingMovies();
+            displayMovies(trendingMovies);
+        });
+
+        newMoviesIcon.addEventListener('click', async () => {
+            const newMovies = await getNewMovies();
+            displayMovies(newMovies);
+        });
+
+        searchBtn.addEventListener('click', async () => {
+            const query = searchInput.value;
+            const movies = await searchMovies(query);
+            displayMovies(movies);
+        });
+
+        signUpBtn.addEventListener('click', () => {
+            modal.style.display = 'block';
+        });
+
+        closeBtn.addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+
+        movieDetailsModal.addEventListener('click', () => {
+            movieDetailsModal.style.display = 'none';
+        });
+
+        window.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+
+        const defaultMovies = await getDefaultMovies();
+        displayMovies(defaultMovies);
+    });
+
+    async function getDefaultMovies() {
+        const url = `http://www.omdbapi.com/?s=space&apikey=${apiKey}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        return data.Search;
+    }
+
+    async function getTrendingMovies() {
+        const url = `http://www.omdbapi.com/?s=trending&apikey=${apiKey}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        return data.Search;
+    }
+
+    async function getNewMovies() {
+        const url = `http://www.omdbapi.com/?s=new&apikey=${apiKey}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        return data.Search;
+    }
+
+    async function searchMovies(query) {
+        const url = `http://www.omdbapi.com/?s=${query}&apikey=${apiKey}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        return data.Search;
+    }
+
+    async function getMovieDetails(movieId) {
+        const url = `http://www.omdbapi.com/?i=${movieId}&apikey=${apiKey}&plot=full`;
+        const response = await fetch(url);
+        const data = await response.json();
+        return data;
+    }
+
+    async function displayMovies(movies) {
+        const moviesContainer = document.getElementById('moviesContainer');
+        moviesContainer.innerHTML = '';
+
+        for (const movie of movies) {
+            const movieDetails = await getMovieDetails(movie.imdbID);
+            const movieElem = createMovieElement(movieDetails);
+
+            moviesContainer.appendChild(movieElem);
+        }
+    }
+
+    function createMovieElement(movie) {
+        const movieElem = document.createElement('div');
+        movieElem.className = 'movie';
+
+        const img = document.createElement('img');
+        img.src = movie.Poster;
+        img.alt = movie.Title;
+
+        const title = document.createElement('h3');
+        title.textContent = movie.Title || 'Title not available';
+
+        movieElem.appendChild(img);
+        movieElem.appendChild(title);
+
+        movieElem.addEventListener('click', () => {
+            showMovieDetails(movie);
+        });
+
+        return movieElem;
+    }
+
+    function showMovieDetails(movie) {
+        movieTitle.textContent = movie.Title || 'Title not available';
+        movieRating.textContent = `Rating: ${movie.imdbRating || 'N/A'}`;
+        moviePlot.textContent = `Plot: ${movie.Plot || 'N/A'}`;
+        movieOtherInfo.textContent = `Genre: ${movie.Genre || 'N/A'}, Director: ${movie.Director || 'N/A'}, Actors: ${movie.Actors || 'N/A'}`;
+        moviePoster.src = movie.Poster;
+        const movieDetailsModal = document.getElementById('movieDetailsModal');
+        movieDetailsModal.style.display = 'block';
+    }
+</script>
+</body>
+</html>
